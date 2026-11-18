@@ -761,7 +761,9 @@ impl<M: InputModeKind> InputBaseState<M> {
     #[doc(hidden)]
     pub fn cursor_layout(&self) -> Option<(Bounds<Pixels>, Pixels)> {
         let layout = self.last_layout.as_ref()?;
-        Some((layout.cursor_bounds?, layout.line_height))
+        let mut bounds = layout.cursor_bounds?;
+        bounds.origin.y -= self.scroll_handle.offset().y;
+        Some((bounds, layout.line_height))
     }
 
     /// Caret geometry from the latest prepaint, for caret-anchored popups.
@@ -7780,7 +7782,7 @@ mod tests {
                 let (caret, _) = state.cursor_layout().expect("caret painted");
                 let viewport = state.input_bounds();
                 let scroll_y = state.scroll_handle.offset().y;
-                let top = caret.origin.y - viewport.origin.y;
+                let top = caret.origin.y + scroll_y - viewport.origin.y;
                 assert!(
                     top >= px(0.) && top + caret.size.height <= viewport.size.height,
                     "caret top {top:?} outside viewport height {:?} (scroll {scroll_y:?})",
